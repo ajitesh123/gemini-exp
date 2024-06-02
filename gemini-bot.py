@@ -1,5 +1,5 @@
 import streamlit as st
-import os
+import os, io, PIL.Image
 import google.generativeai as genai
 
 st.title("Gemini Bot")
@@ -25,8 +25,9 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Process and store Query and Response
-def llm_function(query):
-    response = model.generate_content(query)
+def llm_function(image):
+    image_data = convert_image_to_api_format(image)
+    response = model.generate_content(["Decide to keep or return this outfit", image_data])
 
     # Displaying the Assistant Message
     with st.chat_message("assistant"):
@@ -36,7 +37,7 @@ def llm_function(query):
     st.session_state.messages.append(
         {
             "role":"user",
-            "content": query
+            "content": "Uploaded Image"
         }
     )
 
@@ -49,12 +50,18 @@ def llm_function(query):
     )
 
 # Accept user input
-query = st.chat_input("What's up?")
+uploaded_image = st.file_uploader("Upload an outfit image", type=["jpg", "jpeg", "png"])
 
 # Calling the Function when Input is Provided
-if query:
-    # Displaying the User Message
+if uploaded_image is not None:
+    image = PIL.Image.open(uploaded_image)
     with st.chat_message("user"):
-        st.markdown(query)
+        st.image(image, caption="Uploaded Image")
+    llm_function(image)
 
-    llm_function(query)
+    llm_function(query)def convert_image_to_api_format(image):
+    # Assuming image is a PIL Image object
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    return buffered.getvalue()
+
